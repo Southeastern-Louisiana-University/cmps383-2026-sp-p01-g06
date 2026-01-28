@@ -1,9 +1,20 @@
+using Microsoft.EntityFrameworkCore;
+using Selu383.SP26.Api;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
+//DB CONNECTION
+builder.Services.AddDbContext<DataContext>(options => options.UseSqlServer(
+    builder.Configuration.GetConnectionString("DataContext")
+    ));
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -19,6 +30,16 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+
+//DataContext is registered as a service, we create a scope to get an instance of it, then request it using .GetRequiredService<>()
+//We call Migrate to apply any migrations prior to app startup
+using (var serviceScope = app.Services.CreateScope())
+using (var dbContext = serviceScope.ServiceProvider.GetRequiredService<DataContext>())
+{
+    dbContext.Database.Migrate();
+
+}
 
 app.MapControllers();
 
