@@ -6,7 +6,6 @@ namespace Selu383.SP26.Api
     {
         public DataContext(DbContextOptions<DataContext> options) : base(options)
         {
-            Database.EnsureCreated();
         }
         public DbSet<Location> Locations { get; set; }
 
@@ -15,10 +14,8 @@ namespace Selu383.SP26.Api
             base.OnModelCreating(modelBuilder);
 
 
-            modelBuilder.Entity<Location>(l =>
-            {
-                l.Property(x => x.Name).IsRequired();
-            });
+
+
         }
     }
 }
