@@ -13,7 +13,9 @@ namespace Selu383.SP26.Api
         {
             base.OnModelCreating(modelBuilder);
 
-
+            modelBuilder.Entity<Location>().HasData(
+    new Location { Id = 1, Name = "Seed", Address = "SeedAddr", TableCount = 5 }
+);
 
 
         }
