@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-
 namespace Selu383.SP26.Api.Controllers
 {
     [ApiController]
@@ -7,12 +6,10 @@ namespace Selu383.SP26.Api.Controllers
     public class LocationsController : ControllerBase
     {
         private readonly DataContext _context;
-
         public LocationsController(DataContext context)
         {
             _context = context;
         }
-
         [HttpGet]
         public ActionResult<IEnumerable<LocationDto>> GetLocations()
         {
@@ -25,10 +22,8 @@ namespace Selu383.SP26.Api.Controllers
                     TableCount = x.TableCount
                 })
                 .ToList();
-
             return Ok(locations);
         }
-
         [HttpGet("{id:int}")]
         public ActionResult<LocationDto> GetLocationById(int id)
         {
@@ -37,7 +32,6 @@ namespace Selu383.SP26.Api.Controllers
             {
                 return NotFound();
             }
-
             return Ok(new LocationDto
             {
                 Id = location.Id,
@@ -46,35 +40,29 @@ namespace Selu383.SP26.Api.Controllers
                 TableCount = location.TableCount
             });
         }
-
         [HttpPost]
         public ActionResult<LocationDto> CreateLocation([FromBody] LocationDto dto)
         {
             if (dto.Name == null || dto.Name.Length > 120)
             {
-                return BadRequest();
+                return BadRequest("Name must be between 1 and 120 characters.");
             }
-
             if (dto.Address == null)
             {
-                return BadRequest();
+                return BadRequest("Address is required.");
             }
-
             if (dto.TableCount < 1)
             {
-                return BadRequest();
+                return BadRequest("TableCount must be at least 1.");
             }
-
             var newLocation = new Location
             {
                 Name = dto.Name,
                 Address = dto.Address,
                 TableCount = dto.TableCount
             };
-
             _context.Locations.Add(newLocation);
             _context.SaveChanges();
-
             return CreatedAtAction(nameof(GetLocationById), new { id = newLocation.Id }, new LocationDto
             {
                 Id = newLocation.Id,
@@ -83,7 +71,6 @@ namespace Selu383.SP26.Api.Controllers
                 TableCount = newLocation.TableCount
             });
         }
-
         [HttpPut("{id:int}")]
         public ActionResult<LocationDto> UpdateLocation(int id, [FromBody] LocationDto dto)
         {
@@ -92,23 +79,22 @@ namespace Selu383.SP26.Api.Controllers
             {
                 return NotFound();
             }
-
             if (dto.Name == null || dto.Name.Length > 120)
             {
-                return BadRequest();
+                return BadRequest("Name must be between 1 and 120 characters.");
             }
-
             if (dto.Address == null)
             {
-                return BadRequest();
+                return BadRequest("Address is required.");
             }
-
+            if (dto.TableCount < 1)
+            {
+                return BadRequest("TableCount must be at least 1.");
+            }
             location.Name = dto.Name;
             location.Address = dto.Address;
             location.TableCount = dto.TableCount;
-
             _context.SaveChanges();
-
             return Ok(new LocationDto
             {
                 Id = location.Id,
@@ -117,7 +103,6 @@ namespace Selu383.SP26.Api.Controllers
                 TableCount = location.TableCount
             });
         }
-
         [HttpDelete("{id:int}")]
         public ActionResult DeleteLocation(int id)
         {
@@ -126,10 +111,8 @@ namespace Selu383.SP26.Api.Controllers
             {
                 return NotFound();
             }
-
             _context.Locations.Remove(location);
             _context.SaveChanges();
-
             return Ok();
         }
     }
