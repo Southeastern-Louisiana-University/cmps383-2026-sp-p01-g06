@@ -14,12 +14,19 @@ namespace Selu383.SP26.Api.Controllers
         }
 
         [HttpGet]
-        public ActionResult<LocationDto> GetLocations()
+        public ActionResult<IEnumerable<LocationDto>> GetLocations()
         {
-            var locations = _context.Locations.ToList();
+            var locations = _context.Locations
+                .Select(x => new LocationDto
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    Address = x.Address,
+                    TableCount = x.TableCount
+                })
+                .ToList();
 
             return Ok(locations);
-
         }
 
         [HttpGet("{id:int}")]
@@ -30,39 +37,100 @@ namespace Selu383.SP26.Api.Controllers
             {
                 return NotFound();
             }
-            return Ok(location);
 
+            return Ok(new LocationDto
+            {
+                Id = location.Id,
+                Name = location.Name,
+                Address = location.Address,
+                TableCount = location.TableCount
+            });
         }
+
         [HttpPost]
-        public ActionResult CreateLocation([FromBody] CreateLocationDto dto)
+        public ActionResult<LocationDto> CreateLocation([FromBody] LocationDto dto)
         {
+            if (dto.Name == null || dto.Name.Length > 120)
+            {
+                return BadRequest();
+            }
+
+            if (dto.Address == null)
+            {
+                return BadRequest();
+            }
+
             if (dto.TableCount < 1)
             {
-                return BadRequest("TableCount must be at least 1.");
+                return BadRequest();
             }
+
             var newLocation = new Location
             {
                 Name = dto.Name,
                 Address = dto.Address,
                 TableCount = dto.TableCount
             };
+
             _context.Locations.Add(newLocation);
             _context.SaveChanges();
-            return CreatedAtAction(nameof(GetLocationById), new { id = newLocation.Id }, newLocation);
+
+            return CreatedAtAction(nameof(GetLocationById), new { id = newLocation.Id }, new LocationDto
+            {
+                Id = newLocation.Id,
+                Name = newLocation.Name,
+                Address = newLocation.Address,
+                TableCount = newLocation.TableCount
+            });
         }
-        //[HttpDelete("{id:int}")]
-        //public ActionResult DeleteLocation(int id)
-        //{
-        //    var location = _context.Locations.Find(id);
 
-        //    if (location == null)
-        //    {
-        //        return NotFound("Location ID invalid.");
-        //    }
-        //    _context.Remove(location);
-        //    _context.SaveChanges();
+        [HttpPut("{id:int}")]
+        public ActionResult<LocationDto> UpdateLocation(int id, [FromBody] LocationDto dto)
+        {
+            var location = _context.Locations.FirstOrDefault(x => x.Id == id);
+            if (location == null)
+            {
+                return NotFound();
+            }
 
-        //    return Ok($"Location ID {location.Id} successfully deleted.");
-        //}
+            if (dto.Name == null || dto.Name.Length > 120)
+            {
+                return BadRequest();
+            }
+
+            if (dto.Address == null)
+            {
+                return BadRequest();
+            }
+
+            location.Name = dto.Name;
+            location.Address = dto.Address;
+            location.TableCount = dto.TableCount;
+
+            _context.SaveChanges();
+
+            return Ok(new LocationDto
+            {
+                Id = location.Id,
+                Name = location.Name,
+                Address = location.Address,
+                TableCount = location.TableCount
+            });
+        }
+
+        [HttpDelete("{id:int}")]
+        public ActionResult DeleteLocation(int id)
+        {
+            var location = _context.Locations.FirstOrDefault(x => x.Id == id);
+            if (location == null)
+            {
+                return NotFound();
+            }
+
+            _context.Locations.Remove(location);
+            _context.SaveChanges();
+
+            return Ok();
+        }
     }
 }
