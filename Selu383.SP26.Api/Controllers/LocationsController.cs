@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-
 namespace Selu383.SP26.Api.Controllers
 {
     [ApiController]
@@ -7,21 +6,24 @@ namespace Selu383.SP26.Api.Controllers
     public class LocationsController : ControllerBase
     {
         private readonly DataContext _context;
-
         public LocationsController(DataContext context)
         {
             _context = context;
         }
-
         [HttpGet]
-        public ActionResult<LocationDto> GetLocations()
+        public ActionResult<IEnumerable<LocationDto>> GetLocations()
         {
-            var locations = _context.Locations.ToList();
-
+            var locations = _context.Locations
+                .Select(x => new LocationDto
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    Address = x.Address,
+                    TableCount = x.TableCount
+                })
+                .ToList();
             return Ok(locations);
-
         }
-
         [HttpGet("{id:int}")]
         public ActionResult<LocationDto> GetLocationById(int id)
         {
@@ -30,15 +32,25 @@ namespace Selu383.SP26.Api.Controllers
             {
                 return NotFound();
             }
-            return Ok(location);
-
+            return Ok(new LocationDto
+            {
+                Id = location.Id,
+                Name = location.Name,
+                Address = location.Address,
+                TableCount = location.TableCount
+            });
         }
         [HttpPost]
         public ActionResult<LocationDto> CreateLocation([FromBody] LocationDto dto)
         {
-            if (dto == null)
-                return BadRequest("Invalid payload");
-
+            if (dto.Name == null || dto.Name.Length > 120)
+            {
+                return BadRequest("Name must be between 1 and 120 characters.");
+            }
+            if (dto.Address == null)
+            {
+                return BadRequest("Address is required.");
+            }
             if (dto.TableCount < 1)
                 return BadRequest("TableCount must be at least 1.");
 
@@ -54,7 +66,6 @@ namespace Selu383.SP26.Api.Controllers
 
             _context.Locations.Add(newLocation);
             _context.SaveChanges();
-
             return CreatedAtAction(nameof(GetLocationById), new { id = newLocation.Id }, new LocationDto
             {
                 Id = newLocation.Id,
@@ -63,48 +74,49 @@ namespace Selu383.SP26.Api.Controllers
                 TableCount = newLocation.TableCount
             });
         }
-
-
         [HttpPut("{id:int}")]
-        public ActionResult UpdateLocation(int id, [FromBody] UpdateLocationDto dto)
+        public ActionResult<LocationDto> UpdateLocation(int id, [FromBody] LocationDto dto)
         {
- 
-            if (dto == null)
-                return BadRequest("Invalid payload.");
-
-            if (string.IsNullOrWhiteSpace(dto.Name) || dto.Name.Length > 120)
-                return BadRequest("Name must be between 1 and 120 characters.");
-
-            if (dto.TableCount < 1)
-                return BadRequest("TableCount must be at least 1.");
-
             var location = _context.Locations.FirstOrDefault(x => x.Id == id);
             if (location == null)
-                return NotFound("Location not found.");
-
+            {
+                return NotFound();
+            }
+            if (dto.Name == null || dto.Name.Length > 120)
+            {
+                return BadRequest("Name must be between 1 and 120 characters.");
+            }
+            if (dto.Address == null)
+            {
+                return BadRequest("Address is required.");
+            }
+            if (dto.TableCount < 1)
+            {
+                return BadRequest("TableCount must be at least 1.");
+            }
             location.Name = dto.Name;
             location.Address = dto.Address;
             location.TableCount = dto.TableCount;
-
             _context.SaveChanges();
-
-            return NoContent();
+            return Ok(new LocationDto
+            {
+                Id = location.Id,
+                Name = location.Name,
+                Address = location.Address,
+                TableCount = location.TableCount
+            });
         }
-
-
         [HttpDelete("{id:int}")]
         public ActionResult DeleteLocation(int id)
         {
-            var location = _context.Locations.Find(id);
-
+            var location = _context.Locations.FirstOrDefault(x => x.Id == id);
             if (location == null)
             {
-                return NotFound("Location ID invalid.");
+                return NotFound();
             }
-            _context.Remove(location);
+            _context.Locations.Remove(location);
             _context.SaveChanges();
-
-            return Ok($"Location ID {location.Id} successfully deleted.");
+            return Ok();
         }
     }
 }
